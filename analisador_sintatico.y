@@ -92,7 +92,7 @@
 
 
 algoritmo
-: declaracao_algoritmo bloco_variaveis bloco_inicio declacarao_funcoes
+: declaracao_algoritmo bloco_variaveis declacarao_funcoes bloco_inicio
 | declaracao_algoritmo bloco_variaveis bloco_inicio
 ;
 
