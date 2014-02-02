@@ -1,9 +1,15 @@
 %{
 #include <stdio.h>
 #include <string.h>
+#include "hash.h"
 int i = 0;
 int num_linha = 1;
+char c;
 char comentario[2000];
+char identificador[100];
+char expressao[2000];
+int tipo;
+
 %}
 
 %%
@@ -15,13 +21,13 @@ variáveis 		{return token_pr_variaveis;}
 fim-variáveis 		{return token_pr_fim_variaveis;}
 início			{return token_pr_inicio;}
 fim 			{return token_pr_fim;}
-inteiro 		{return token_pr_inteiro;}
+inteiro 		{tipo = 0; return token_pr_inteiro;}
 inteiros 		{return token_pr_inteiros;}
-caractere 		{return token_pr_caractere;}
+caractere 		{tipo = 1; return token_pr_caractere;}
 caracteres 		{return token_pr_caracteres;}
-real 			{return token_pr_real;}
+real 			{tipo = 3; return token_pr_real;}
 reais 			{return token_pr_reais;}
-literal 		{return token_pr_literal;}
+literal 		{tipo = 2; return token_pr_literal;}
 literais 		{return token_pr_literais;}
 lógico 			{return token_pr_logico;}
 lógicos 		{return token_pr_logicos;}
@@ -94,7 +100,24 @@ default			{return token_pr_default;}
 ";"							{return token_ponto_virgula;}
 ":"							{return token_dois_pontos;}
 ":="						{return token_atribuicao;}
-[a-zA-Z_][a-zA-Z0-9_]*		{return token_identificador;} 
+[a-zA-Z_][a-zA-Z0-9_]*		{
+	strcpy(identificador,yytext);	
+	
+	
+	//printf(" %d\n",strlen(expressao));
+	expressao[strlen(expressao)] = '-';
+	i=0;
+	c = yytext[i];
+	while(c!='\0'){
+		expressao[strlen(expressao)] = c;
+		i++;
+	//	printf("%c",c);
+		c = yytext[i];
+	}
+	expressao[strlen(expressao)]='\0';
+	//printf(" %d %s\n",strlen(expressao),expressao);
+	return token_identificador;
+} 
 
 \/\/[^\n]*\n {num_linha++;}
 \/\*[^(\*\/)]*\*\/ {

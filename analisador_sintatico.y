@@ -1,5 +1,16 @@
 %{
 #include <stdio.h>
+#include "hash.h"
+
+Lista **tab_variaveis, **tab_funcoes;
+Lista *var, *func;
+
+int i;
+extern int tipo;
+extern char * yytext;
+extern char identificador[100];
+extern int num_linha;
+extern char expressao[2000];
 %}
 
 /*%error-verbose*/
@@ -88,11 +99,12 @@
 
 %start algoritmo
 
+
 %%
 
 
 algoritmo
-: declaracao_algoritmo bloco_variaveis declacarao_funcoes bloco_inicio
+: declaracao_algoritmo bloco_variaveis declacarao_funcoes bloco_inicio 
 | declaracao_algoritmo bloco_variaveis bloco_inicio
 ;
 
@@ -103,13 +115,43 @@ declaracao_algoritmo
 /*bloco de variaveis pode nao existir ou pode ser vazio*/
 bloco_variaveis
 : token_pr_variaveis declaracao_variaveis token_pr_fim_variaveis
+{
+	
+	/*if(busca(tab_variaveis,"a1a")!=NULL)
+		imprime(busca(tab_variaveis,"a1a"));
+	else
+		printf("Nao encontrado\n");*/
+}
 | token_pr_variaveis token_pr_fim_variaveis
 |
 ;
 
 declaracao_variaveis
 : lista_variaveis token_dois_pontos tipo_variavel token_ponto_virgula
+{
+	//printf("primeiro\n");
+	tab_variaveis = insere_variavel_hash(tab_variaveis, var, tipo);
+	if(tab_variaveis == NULL){
+		printf("Erro semantico na linha %d. Variavel redeclarada.\n",num_linha);
+		exit(0);
+	}
+	//printf ("identificador= %s\n",identificador);	
+	libera(var);
+	var = inicializa();
+}
 | declaracao_variaveis lista_variaveis token_dois_pontos tipo_variavel token_ponto_virgula
+{
+	//printf("segundo\n");
+	tab_variaveis = insere_variavel_hash(tab_variaveis, var, tipo);
+	if(tab_variaveis == NULL){
+		printf("Erro semantico na linha %d. Variavel redeclarada.\n",num_linha);
+		exit(0);
+	}
+	//printf ("identificador= %s\n",identificador);
+	libera(var);
+	var = inicializa();
+	
+}
 ;
 
 tipo_variavel
@@ -119,7 +161,16 @@ tipo_variavel
 
 lista_variaveis
 : lista_variaveis token_virgula token_identificador
+{
+	var = insere_variavel_lista(var,identificador,0);
+			
+	//printf("%s\n",identificador);
+}
 | token_identificador
+{
+	var = insere_variavel_lista(var,identificador,0);
+	//printf("%s\n",identificador);
+}
 ;
 
 tipo_primitivo
@@ -150,6 +201,9 @@ tipo_primitivo_plural
 /*bloco inicio pode ser vazio*/
 bloco_inicio
 : token_pr_inicio lista_comandos token_pr_fim
+{
+	verifica_variavel_usada(tab_variaveis);
+}
 | token_pr_inicio token_pr_fim
 ;
 
@@ -160,6 +214,12 @@ lista_comandos
 
 comando
 : atribuicao
+{
+	if(!verifica_tipo(tab_variaveis,expressao))
+		printf("Erro semantico na linha %d. Tipo invalido associado a variavel.\n",num_linha);
+
+	//printf("at %s\n",expressao);
+}
 | chamada_funcao token_ponto_virgula
 | chamada_funcao_interna
 | comando_retorne
@@ -171,11 +231,34 @@ comando
 
 valor_esquerda
 : token_identificador
+{
+	//verifica se as variaveis que estao recebendo atribuicao foram declaradas, se sim usada=1
+	var =busca(tab_variaveis,identificador); 
+	if(var == NULL){
+		printf("Erro semantico na linha %d. Variavel nao declarada.\n",num_linha);
+		exit(0);
+		
+	}else{
+		set_usada(var);
+	}
+	for(i-0;i<2000;i++){
+		expressao[i]='\0';
+	}
+	//printf("%s\n",identificador);
+	
+	//imprime_hash(tab_variaveis);
+	
+}
 | token_identificador matriz_colchetes
 ;
 
 atribuicao
 : valor_esquerda token_atribuicao expressao token_ponto_virgula
+{
+//printf("%s\n",identificador);
+//printf("%s\n",expressao);
+
+}
 ;
 
 comando_retorne
@@ -280,8 +363,32 @@ termo_9
 | token_nao termo_9
 | token_abre_parenteses expressao token_fecha_parenteses
 | token_identificador
+{
+	var =busca(tab_variaveis,identificador); 
+	if(var == NULL){
+		printf("Erro semantico na linha %d. Variavel nao declarada.\n",num_linha);
+		exit(0);
+		
+	}else{
+		set_usada(var);
+		//printf("Variavel declarada-> %s!!\n",identificador);
+	}
+	//printf("%s\n",expressao);
+}
 | valor_primitivo
 | chamada_funcao
+{
+	func = busca(tab_funcoes, identificador); 
+	if(func == NULL){
+		printf("Erro semantico na linha %d. Funcao nao declarada.\n",num_linha);
+		exit(0);
+		
+	} else {
+		set_usada(func);
+		printf("Funcao declarada-> %s!!\n",identificador);
+	}
+	//printf("%s\n",expressao);
+}
 | chamada_funcao_interna
 ;
 
@@ -311,12 +418,31 @@ paramentros_chamada_funcao
 
 declacarao_funcoes
 : declacarao_funcoes declaracao_funcao
+{
+	//printf("declaracao de funcoes - ultima\n");
+}
 | declaracao_funcao
+{
+	//printf("declaracao de funcoes - primeira\n");
+}
 ;
 
 declaracao_funcao
 : token_pr_funcao token_identificador paramentros_funcao_parenteses token_dois_pontos tipo_primitivo bloco_inicio
+{
+	tab_funcoes = insere_funcao_hash(tab_funcoes, func, tipo);
+	if(tab_funcoes == NULL){
+		printf("Erro semantico na linha %d. Funcao redeclarada.\n",num_linha);
+		exit(0);
+	}
+	//printf ("identificador= %s\n",identificador);	
+	libera(func);
+	func = inicializa();
+}
 | token_pr_funcao token_identificador paramentros_funcao_parenteses bloco_inicio
+{
+	//printf("declaracao de funcoes - sem parametros\n");
+}
 ;
 
 paramentros_funcao_parenteses
@@ -341,6 +467,13 @@ paramentro_funcao
 #include "lex.yy.c"
 
 main(){
+	
+	tab_variaveis = inicializa_hash();
+	var = inicializa();
+	
+	tab_funcoes = inicializa_hash();
+	func = inicializa();
+	
 	yyparse();
 }
 

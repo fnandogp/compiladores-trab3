@@ -1,0 +1,21 @@
+/*
+Código que recebe um inteiro e diz se esse inteiro, que é uma idade, é adulto, idoso ou jovem.
+*/
+
+//inicio do algoritomo
+algoritmo idade;
+
+//variáveis
+variáveis
+	idade,a1a: inteiro;
+	nome: literal;
+fim-variáveis
+
+//inicio do programa
+início
+    	a1a := idade;
+    	idade := leia();
+	a1a := idade + nome;
+	//operador SE / ENTÃO / SENÃO
+	imprima("Nome:", nome, " / Faixa etária: ", faixa_etaria(idade));
+fim
